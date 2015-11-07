@@ -1,0 +1,169 @@
+# data-visualization-with-Grid-in-R
+# This visualization is about bias from 20 judges in 2000 Olympic diving game.
+# For each judge from different country, I calculated how biased when they judged on divings, 
+and the correspondent confidence intervals for the bias.
+# The visualization was finished with R package *Grid*.
+# All rights reserved by Tianjia Chen, Yale University.
+
+# Grid: Tianjia Chen.
+library(grid)
+
+pdf("grid_tc458.pdf", width=20, height=12)
+
+all <- read.csv("cleanedresults.csv", stringsAsFactors = FALSE)
+
+# extract coefficients, p-values for each jusge
+names <- unique(all$cleanjname)
+detail <- list()
+for (i in 1:length(names)) {
+  detail[[i]] <- subset(all, cleanjname == names[i])
+}
+
+
+# create plot
+grid.newpage()
+
+plotvp <- viewport(x = 0.05,
+                   y = 0.05,
+                   width = 0.9,
+                   height = 0.8,
+                   just=c("left", "bottom"),
+                   name="plotRegion")
+pushViewport(plotvp)
+grid.rect()
+grid.text("Bias For 25 Countries", 
+          x= 0.5, y = 1.1, 
+          gp=gpar(fontsize=25))
+
+
+lyt <- grid.layout(5, 5, widths = unit(c(1,1,1,1,1), 
+                                       c("null","null","null","null","null")))
+pushViewport(viewport(layout = lyt, name = "top-25"))
+
+# draw plot for judge in each country.
+
+################################ first 5 countries #############################
+
+for (i in 1:25) {
+  if (i <= 5) {
+    pushViewport(viewport(layout.pos.row = 1, layout.pos.col = i))
+  }
+  if (i > 5 & i <= 10) {
+    pushViewport(viewport(layout.pos.row = 2, layout.pos.col = i-5))
+  }
+  if (i > 10 & i <= 15) {
+    pushViewport(viewport(layout.pos.row = 3, layout.pos.col = i-10))
+  }
+  if (i > 15 & i <= 20) {
+    pushViewport(viewport(layout.pos.row = 4, layout.pos.col = i-15))
+  }
+  if (i > 20 & i <= 25) {
+    pushViewport(viewport(layout.pos.row = 5, layout.pos.col = i-20))
+  }
+  
+  grid.rect()
+  
+  # coef for home country
+  xmatch <- which(detail[[i]]$dcountry == detail[[i]]$jcountry[1])
+  ymatch <- detail[[i]]$coef[detail[[i]]$dcountry == detail[[i]]$jcountry[1]]
+  if (sum(detail[[i]]$dcountry == detail[[i]]$jcountry[1]) == 0)
+    xmatch <- 0
+  
+  # coef,pvalues, CI for all countries
+  x <- 1: length(detail[[i]]$dcountry)
+  y <- detail[[i]]$coef
+  p <- detail[[i]]$pval
+  se <- detail[[i]]$se
+  CI_low <- y - 1.96*se
+  CI_high <- y + 1.96*se
+  
+  # x: country  y: coef  line: CI for coef
+  pushViewport(plotViewport(c(1.5, 1.5, 1, 1)),
+               dataViewport(x, y))
+  grid.points(unit(x, "native"), unit(y, "native"), 
+              size = unit(ifelse(x == xmatch, 0.8, 0.3), "char"), 
+              pch = ifelse(x == xmatch, 22, 21), 
+              gp = gpar(
+                fill = ifelse(p < 0.05, "red", "blue"),
+                col = ifelse(p < 0.05, "red", "blue")
+              )
+  )
+  grid.segments(unit(x, "native"), unit(CI_low, "native"), 
+                unit(x, "native"), unit(CI_high,"native"))
+  grid.lines(unit(x, "native"), unit(0, "native"), gp = gpar(lty = 4))
+  grid.text("0", x = unit(length(x) + 3, "native"), y = unit(0, "native"))
+  grid.yaxis(at = seq(min(y), max(y), length.out = 5), 
+             label = format(seq(min(y), max(y), length.out = 5), digits = 1),
+             gp = gpar(fontsize = 7))
+  grid.xaxis(at = c(1, length(x)/2, length(x)), 
+             label = c(" ", detail[[i]]$cleanjname[1], " "),
+             gp = gpar(fontsize = 9))
+  
+  popViewport()
+  popViewport()
+  popViewport()
+  
+}
+
+popViewport()
+
+grid.points(x= 0.89, y = 1.105, 
+            size = unit(0.3, "char"),
+            pch = 21,
+            gp=gpar(fill = "red", col = "red"))
+
+grid.text("significant p-value", 
+          x= 0.9, y = 1.1, 
+          gp=gpar(fontsize=13),
+          just = c("left","bottom"))
+
+grid.points(x= 0.89, y = 1.055, 
+            size = unit(0.3, "char"),
+            pch = 21,
+            gp=gpar(fill = "blue", col = "blue"))
+
+grid.text("non-significant p-value", 
+          x= 0.9, y = 1.05, 
+          gp=gpar(fontsize=13),
+          just = c("left", "bottom"))
+
+grid.points(x= 0.89, y = 1.155, 
+            size = unit(0.8, "char"),
+            pch = 22,
+            gp=gpar(fill = "black", col = "black"))
+
+grid.text("matching country", 
+          x= 0.9, y = 1.15, 
+          gp=gpar(fontsize=13),
+          just = c("left","bottom"))
+
+
+grid.lines(x= c(0.736, 0.742), y = c(1.15, 1.15))
+
+grid.text("confidence interval", 
+          x= 0.75, y = 1.15, 
+          gp=gpar(fontsize=13),
+          just = c("left","bottom"))
+
+grid.lines(x= c(0.736, 0.742), y = c(1.105, 1.105), 
+           gp = gpar(lty = 4))
+
+grid.text("coefficient = 0", 
+          x= 0.75, y = 1.1, 
+          gp=gpar(fontsize=13),
+          just = c("left","bottom"))
+
+popViewport()
+
+grid.text("x-axis: judge", 
+          x= 0.9, y = 0.03, 
+          gp=gpar(fontsize=13),
+          just = c("left","bottom"))
+
+grid.text("y-axis: coefficients", 
+          x= 0.05, y = 0.87, 
+          gp=gpar(fontsize=13),
+          just = c("left","bottom"))
+
+
+dev.off()
