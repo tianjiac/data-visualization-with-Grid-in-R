@@ -8,4 +8,4 @@ This repository contains several examples of data visualization using "Grid" pac
 * The visualization was finished with R package *Grid*.
 * All rights reserved by Tianjia Chen, Yale University.
 
-![Image of Bias](http://i.imgur.com/jFdRzLd.png)
+![Image of Bias](http://i.imgur.com/1srw8kx.png)
